@@ -25,15 +25,19 @@
                     <Label   Content=""   x:Name="lblCount" FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
 
                 </StackPanel>
-                
+
+                <Button Margin="20,0,0,0" x:Name="btnExport" Width="100" Height="30" Content="Export" Click="btnExport_Click"></Button>
+               
+                <Button Margin="20,0,0,0" x:Name="btnClear" Width="100" Height="30" Content="Clear" Click="btnClear_Click"></Button>
+
             </StackPanel>
             
             
             
-            <ListBox Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsSynchronizedWithCurrentItem="True" ScrollViewer.CanContentScroll="True" Height="150"   x:Name="lstTags" Margin="20,10,20,20" MinHeight="150" MinWidth="500" Background="White" SelectionMode="Multiple"  >
+            <ListBox Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsSynchronizedWithCurrentItem="True" ScrollViewer.CanContentScroll="True" Height="150"   x:Name="lstTags" Margin="20,10,20,20" MinHeight="150" MinWidth="500" Background="White" SelectionMode="Single"  >
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapPanel IsItemsHost="True" />
+                        <VirtualizingStackPanel IsItemsHost="True" Orientation="Vertical"/>
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
             </ListBox>

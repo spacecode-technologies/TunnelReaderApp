@@ -37,7 +37,8 @@ namespace TunnelRedaerWpf
         static ImpinjReader reader = new ImpinjReader();
         static IWebSocketConnection webSocketConnection;
         public static Dictionary<string, string> dicProfile = new Dictionary<string, string>();
-        List<string> tags = new List<string>();
+        int tagcount = 0;
+        List<string> uniqueTags = new List<string>();
 
         public IConfiguration Configuration { get; private set; }
 
@@ -78,7 +79,11 @@ namespace TunnelRedaerWpf
                     Console.WriteLine("Open!");
                     this.Dispatcher.Invoke(new Action(() =>
                     {
+                        tagcount = 0;
+                        lstTags.Items.Clear();
                         lblScanLabel.Content = "Client Connected";
+                        lblTunnlCount.Content = "0";
+                        lblCount.Content = "0";
                         lblScanLabel.Foreground = new SolidColorBrush(Colors.YellowGreen);
                     }));
                    
@@ -86,15 +91,31 @@ namespace TunnelRedaerWpf
                 socket.OnClose = () =>
                 {
                     Console.WriteLine("Close!");
-                    reader.Stop();
-                    reader.Disconnect();
+    
+                    this.Dispatcher.Invoke(new Action(() =>
+                    {
+                       
+                        reader.Stop();
+                        reader.Disconnect();
+                        lblScanLabel.Content = "Client DisConnected";
+                        //lblTunnlCount.Content = "0";
+                        //lblCount.Content = "0";
+                        //tagcount = 0;
+                        //lstTags.Items.Clear();
+                        lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                    }));
                     socket.Send("Scan stopped");
                 };
                 socket.OnError = exception =>
                 {
                     Console.WriteLine(exception);
-                    reader.Stop();
-                    reader.Disconnect();
+                    this.Dispatcher.Invoke(new Action(() =>
+                    {                      
+                        reader.Stop();
+                        reader.Disconnect();
+                        lblScanLabel.Content = "Client DisConnected";                       
+                        lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                    }));
                     socket.Send("Scan stopped");
                 };
 
@@ -105,25 +126,34 @@ namespace TunnelRedaerWpf
                     try
                     {
                         if (message.Equals("start"))
-                        {
-                            socket.Send("Scan Started");
+                        {                         
                             this.Dispatcher.Invoke(new Action(() =>
                             {
+                                tagcount = 0;
+                                lblTunnlCount.Content = "0";
+                                lblCount.Content = "0";
                                 lblScanLabel.Content = "Scan Started";
                                 lblScanLabel.Foreground = new SolidColorBrush(Colors.Green);
+                                socket.Send("Scan Started");
                             }));
                                                      
                             initSetting();
                         }
                         else
                         {
-                            reader.Stop();
-                            reader.Disconnect();                           
-                            socket.Send("Scan stopped");
+                            
                             this.Dispatcher.Invoke(new Action(() =>
                             {
+                                
                                 lblScanLabel.Content = "Scan stopped";
+                                /*lblTunnlCount.Content = "0";
+                                lblCount.Content = "0";
+                                tagcount = 0;
+                                lstTags.Items.Clear();*/
                                 lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                                reader.Stop();
+                                reader.Disconnect();
+                                socket.Send("Scan stopped");
                             }));
                         }
 
@@ -131,7 +161,8 @@ namespace TunnelRedaerWpf
                     catch (Exception e)
                     {
                         e.Message.ToString();
-                        socket.Send(e.Message.ToString());
+                        MessageBox.Show(e.Message.ToString());             
+                        //socket.Send(e.Message.ToString());
                     }
 
                 };
@@ -181,38 +212,57 @@ namespace TunnelRedaerWpf
 
                     reader.ConnectionLost += OnConnectionLost;
 
-                    //settings.ReaderMode = ReaderMode.DenseReaderM4;
+                    settings.ReaderMode = ReaderMode.DenseReaderM4;
 
-                    //settings.SearchMode = SearchMode.SingleTarget;
+                    settings.SearchMode = SearchMode.DualTarget;
 
-                    //settings.Session = 2;
-                    //settings.TagPopulationEstimate = 32;
+                    settings.Session = 3;
 
-                    //settings.Antennas.DisableAll();
+                    settings.TagPopulationEstimate = 32;
 
-                    //settings.Antennas.GetAntenna(1).IsEnabled = true;
-                    //settings.Antennas.GetAntenna(1).MaxTxPower = true;
-                    //settings.Antennas.GetAntenna(1).TxPowerInDbm = 31.5;
-                    //settings.Antennas.GetAntenna(1).MaxRxSensitivity = true;
-                    //settings.Antennas.GetAntenna(1).RxSensitivityInDbm = -80;
+                    settings.Report.IncludeFastId = false;
 
-                    //settings.Antennas.GetAntenna(9).IsEnabled = true;
-                    //settings.Antennas.GetAntenna(9).MaxTxPower = true;
-                    //settings.Antennas.GetAntenna(9).TxPowerInDbm = 31.5;
-                    //settings.Antennas.GetAntenna(9).MaxRxSensitivity = true;
-                    //settings.Antennas.GetAntenna(9).RxSensitivityInDbm = -80;
+                    settings.Antennas.DisableAll();
 
-                    //settings.Antennas.GetAntenna(17).IsEnabled = true;
-                    //settings.Antennas.GetAntenna(17).MaxTxPower = true;
-                    //settings.Antennas.GetAntenna(17).TxPowerInDbm = 31.5;
-                    //settings.Antennas.GetAntenna(17).MaxRxSensitivity = true;
-                    //settings.Antennas.GetAntenna(17).RxSensitivityInDbm = -80;
+                    settings.Antennas.GetAntenna(1).IsEnabled = true;
+                    settings.Antennas.GetAntenna(1).MaxTxPower = true;
+                    settings.Antennas.GetAntenna(1).TxPowerInDbm = 31.5;
+                    settings.Antennas.GetAntenna(1).MaxRxSensitivity = true;
+                    settings.Antennas.GetAntenna(1).RxSensitivityInDbm = -80;
 
-                    //settings.Antennas.GetAntenna(25).IsEnabled = true;
-                    //settings.Antennas.GetAntenna(25).MaxTxPower = true;
-                    //settings.Antennas.GetAntenna(25).TxPowerInDbm = 31.5;
-                    //settings.Antennas.GetAntenna(25).MaxRxSensitivity = true;
-                    //settings.Antennas.GetAntenna(25).RxSensitivityInDbm = -80;
+                    settings.Antennas.GetAntenna(9).IsEnabled = true;
+                    settings.Antennas.GetAntenna(9).MaxTxPower = true;
+                    settings.Antennas.GetAntenna(9).TxPowerInDbm = 31.5;
+                    settings.Antennas.GetAntenna(9).MaxRxSensitivity = true;
+                    settings.Antennas.GetAntenna(9).RxSensitivityInDbm = -80;
+
+                    settings.Antennas.GetAntenna(17).IsEnabled = true;
+                    settings.Antennas.GetAntenna(17).MaxTxPower = true;
+                    settings.Antennas.GetAntenna(17).TxPowerInDbm = 31.5;
+                    settings.Antennas.GetAntenna(17).MaxRxSensitivity = true;
+                    settings.Antennas.GetAntenna(17).RxSensitivityInDbm = -80;
+
+                    settings.Antennas.GetAntenna(25).IsEnabled = true;
+                    settings.Antennas.GetAntenna(25).MaxTxPower = true;
+                    settings.Antennas.GetAntenna(25).TxPowerInDbm = 31.5;
+                    settings.Antennas.GetAntenna(25).MaxRxSensitivity = true;
+                    settings.Antennas.GetAntenna(25).RxSensitivityInDbm = -80;
+
+                    settings.Report.Mode = ReportMode.Individual;
+
+                    settings.LowDutyCycle.IsEnabled = true;
+                    settings.LowDutyCycle.EmptyFieldTimeoutInMs = 500;
+                    settings.LowDutyCycle.FieldPingIntervalInMs = 200;
+                    
+                    settings.Filters.Mode = TagFilterMode.None;
+                                        
+                    //settings.ReducedPowerFrequenciesInMhz.Add(865.70);
+                   
+                   //settings.ReducedPowerFrequenciesInMhz.Add(866.30);
+                  
+                   //settings.ReducedPowerFrequenciesInMhz.Add(866.90);
+                   
+                   //settings.ReducedPowerFrequenciesInMhz.Add(867.50);
 
                     //switch ( dicProfile["Reader_Mode"])
                     //{
@@ -337,7 +387,7 @@ namespace TunnelRedaerWpf
 
                     reader.ApplySettings(settings);
 
-                    reader.SaveSettings();
+                    //reader.SaveSettings();
 
                     reader.TagsReported += OnTagsReported;
 
@@ -354,8 +404,12 @@ namespace TunnelRedaerWpf
                 catch (Exception ex)
                 {
                     ex.Message.ToString();
-                    lblScanLabel.Content = ex.Message.ToString();
-                    lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                    this.Dispatcher.Invoke(new Action(() =>
+                    {
+                        lblScanLabel.Content = ex.Message.ToString();
+                        lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                    }));
+                    
                 }
            
             }
@@ -363,15 +417,23 @@ namespace TunnelRedaerWpf
             {
                 // Handle Octane SDK errors.
                 Console.WriteLine("Octane SDK exception: {0}", e.Message);
-                lblScanLabel.Content = e.Message.ToString();
-                lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                this.Dispatcher.Invoke(new Action(() =>
+                {
+                    lblScanLabel.Content = e.Message.ToString();
+                    lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                }));
+
             }
             catch (Exception e)
             {
                 // Handle other .NET errors.
                 Console.WriteLine("Exception : {0}", e.Message);
-                lblScanLabel.Content = e.Message.ToString();
-                lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                this.Dispatcher.Invoke(new Action(() =>
+                {
+                    lblScanLabel.Content = e.Message.ToString();
+                    lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                }));
+
             }
         }
 
@@ -406,7 +468,7 @@ namespace TunnelRedaerWpf
             }
         }
 
-        static void ConnectToReader()
+        public  void ConnectToReader()
         {
             try
             {
@@ -418,11 +480,15 @@ namespace TunnelRedaerWpf
             catch (OctaneSdkException e)
             {
                 Console.WriteLine("Failed to connect.");
-                throw e;
+                this.Dispatcher.Invoke(new Action(() =>
+                {
+                    lblScanLabel.Content = e.Message.ToString();
+                    lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
+                }));
             }
         }
 
-        static void OnConnectionLost(ImpinjReader reader)
+        public  void OnConnectionLost(ImpinjReader reader)
         {
             Console.WriteLine("Connection lost : {0} ({1})", reader.Name, reader.Address);
             reader.Disconnect();
@@ -440,23 +506,31 @@ namespace TunnelRedaerWpf
         {
             try
             {
-                
-                    foreach (Tag tag in report)
+                if (!action.Equals("stop"))
+                {
+                    if(report.Tags.Count>0)
                     {
-                        Console.WriteLine(toAscii(tag.Epc.ToHexString()));
-                        string a = toAscii(tag.Epc.ToHexString());
-                        webSocketConnection.Send(tag.Epc.ToHexString());
+                        Console.WriteLine(toAscii(report.Tags[0].Epc.ToHexString()));
+                        string a = toAscii(report.Tags[0].Epc.ToHexString());
+                        webSocketConnection.Send(report.Tags[0].Epc.ToHexString());
                         this.Dispatcher.Invoke(new Action(() =>
                         {
-                            tags.Add(a);
-                          lblCount.Content = tags.Count.ToString();
-                          if (!lstTags.Items.Contains(a))
-                          {
-                              lstTags.Items.Add(a);
-                              lblTunnlCount.Content = lstTags.Items.Count.ToString();
-                          }
-                      }));
+                            tagcount = tagcount + 1;
+                            lblCount.Content = tagcount.ToString();
+                            
+                            if(!uniqueTags.Contains(a))
+                            {
+                                uniqueTags.Add(a);
+                                lblTunnlCount.Content = uniqueTags.Count.ToString();
+                            }
 
+                            if (!lstTags.Items.Contains(a))
+                            {
+                                lstTags.Items.Add(a);
+                                lblTunnlCount.Content = lstTags.Items.Count.ToString();
+                            }
+                        }));
+                    }
 
                 }
                 
@@ -503,5 +577,26 @@ namespace TunnelRedaerWpf
 
         }
 
+        private void btnExport_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                File.WriteAllLines(Environment.CurrentDirectory.ToString()+"/log.txt", lstTags.Items.OfType<string>().ToArray(), Encoding.UTF8);
+
+            }
+            catch (Exception ex)
+            {
+                ex.Message.ToString();
+            }
+         }
+
+        private void btnClear_Click(object sender, RoutedEventArgs e)
+        {
+            lblTunnlCount.Content = "0";
+            lblCount.Content = "0";
+            tagcount = 0;
+            lstTags.Items.Clear();
+            uniqueTags.Clear();
+        }
     }
 }
