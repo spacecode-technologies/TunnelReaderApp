@@ -19,6 +19,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Path = System.IO.Path;
 using System.Configuration;
+using System.Diagnostics;
 
 namespace TunnelRedaerWpf
 {
@@ -39,6 +40,8 @@ namespace TunnelRedaerWpf
         public static Dictionary<string, string> dicProfile = new Dictionary<string, string>();
         int tagcount = 0;
         List<string> uniqueTags = new List<string>();
+        Stopwatch watch = new Stopwatch();
+        
 
         public IConfiguration Configuration { get; private set; }
 
@@ -46,26 +49,27 @@ namespace TunnelRedaerWpf
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine("TAG COUNT");
                 InitializeComponent();
                 var builder = new ConfigurationBuilder()
                .SetBasePath(Directory.GetCurrentDirectory())
                .AddJsonFile("appsetting.json", optional: false, reloadOnChange: true);
                 Configuration = builder.Build();
-                READERIP =Configuration.GetConnectionString("ReaderIp");
+                READERIP = Configuration.GetConnectionString("ReaderIp");
                 SYSTEMIP = Configuration.GetConnectionString("SystemIp");
-                PORT = Configuration.GetConnectionString("Port");              
+                PORT = Configuration.GetConnectionString("Port");
                 //readProfile();
                 startServer();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 MessageBox.Show(e.Message.ToString());
-                e.Message.ToString();                    
+                e.Message.ToString();
             }
         }
 
 
-        private  void startServer()
+        private void startServer()
         {
             var server = new WebSocketServer("ws://" + SYSTEMIP + ":" + PORT);
             string clientAddress = "";
@@ -76,7 +80,7 @@ namespace TunnelRedaerWpf
                 {
                     //clientPort = socket.ConnectionInfo.ClientPort;
                     clientAddress = socket.ConnectionInfo.ClientIpAddress;
-                    Console.WriteLine("Open!");
+                    System.Diagnostics.Debug.WriteLine("Open!");
                     this.Dispatcher.Invoke(new Action(() =>
                     {
                         tagcount = 0;
@@ -86,15 +90,15 @@ namespace TunnelRedaerWpf
                         lblCount.Content = "0";
                         lblScanLabel.Foreground = new SolidColorBrush(Colors.YellowGreen);
                     }));
-                   
+
                 };
                 socket.OnClose = () =>
                 {
-                    Console.WriteLine("Close!");
-    
+                    System.Diagnostics.Debug.WriteLine("Close!");
+
                     this.Dispatcher.Invoke(new Action(() =>
                     {
-                       
+
                         reader.Stop();
                         reader.Disconnect();
                         lblScanLabel.Content = "Client DisConnected";
@@ -108,12 +112,12 @@ namespace TunnelRedaerWpf
                 };
                 socket.OnError = exception =>
                 {
-                    Console.WriteLine(exception);
+                    System.Diagnostics.Debug.WriteLine(exception);
                     this.Dispatcher.Invoke(new Action(() =>
-                    {                      
+                    {
                         reader.Stop();
                         reader.Disconnect();
-                        lblScanLabel.Content = "Client DisConnected";                       
+                        lblScanLabel.Content = "Client DisConnected";
                         lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
                     }));
                     socket.Send("Scan stopped");
@@ -121,12 +125,12 @@ namespace TunnelRedaerWpf
 
                 socket.OnMessage = message =>
                 {
-                    Console.WriteLine(message);
+                    System.Diagnostics.Debug.WriteLine(message);
                     action = message;
                     try
                     {
                         if (message.Equals("start"))
-                        {                         
+                        {
                             this.Dispatcher.Invoke(new Action(() =>
                             {
                                 tagcount = 0;
@@ -136,15 +140,15 @@ namespace TunnelRedaerWpf
                                 lblScanLabel.Foreground = new SolidColorBrush(Colors.Green);
                                 socket.Send("Scan Started");
                             }));
-                                                     
+
                             initSetting();
                         }
                         else
                         {
-                            
+
                             this.Dispatcher.Invoke(new Action(() =>
                             {
-                                
+
                                 lblScanLabel.Content = "Scan stopped";
                                 /*lblTunnlCount.Content = "0";
                                 lblCount.Content = "0";
@@ -161,325 +165,153 @@ namespace TunnelRedaerWpf
                     catch (Exception e)
                     {
                         e.Message.ToString();
-                        MessageBox.Show(e.Message.ToString());             
+                        MessageBox.Show(e.Message.ToString());
                         //socket.Send(e.Message.ToString());
                     }
 
                 };
             });
 
-            Console.WriteLine("Start listening");
+            System.Diagnostics.Debug.WriteLine("Start listening");
 
             Console.ReadLine();
         }
 
-        private  void initSetting()
+        private void initSetting()
         {
-            try
-            {
-                // Assign a name to the reader. 
-                // This will be used in tag reports. 
-                reader.Name = "My Reader #1";
 
-                // Connect to the reader.
+            // Assign a name to the reader. 
+            // This will be used in tag reports. 
+            reader.Name = "My Reader #1";
+
+            // Connect to the reader.
+           // if (!reader.IsConnected)
+            {
                 ConnectToReader();
+                Settings settings = reader.QueryDefaultSettings();
 
-                try
+                settings.AutoStart.Mode = AutoStartMode.Immediate;
+                settings.AutoStart.GpiPortNumber = 0;
+                settings.AutoStart.GpiLevel = false;
+                settings.AutoStart.FirstDelayInMs = 0;
+                settings.AutoStart.PeriodInMs = 0;
+                settings.AutoStart.UtcTimestamp = 0;
+
+                settings.AutoStop.Mode = AutoStopMode.None;
+                settings.AutoStop.DurationInMs = 0;
+                settings.AutoStop.GpiPortNumber = 0;
+                settings.AutoStop.GpiLevel = false;
+                settings.AutoStop.Timeout = 0;
+
+                settings.ReaderMode = ReaderMode.MaxThroughput;
+                settings.RfMode = 1002;
+                settings.SearchMode = SearchMode.DualTarget;
+
+                settings.Session = 3;
+                settings.TagPopulationEstimate = 32;
+
+                settings.LowDutyCycle.IsEnabled = false;
+                settings.LowDutyCycle.EmptyFieldTimeoutInMs = 500;
+                settings.LowDutyCycle.FieldPingIntervalInMs = 200;
+
+                settings.Filters.Mode = TagFilterMode.None;
+
+                settings.TruncatedReply.IsEnabled = false;
+                settings.TruncatedReply.Gen2v2TagsOnly = true;
+                settings.TruncatedReply.EpcLengthInWords = 0;
+                settings.TruncatedReply.BitPointer = 0;
+
+
+                settings.Report.IncludeAntennaPortNumber = true;
+                settings.Report.IncludeChannel = true;
+                settings.Report.IncludeFirstSeenTime = true;
+                settings.Report.IncludeLastSeenTime = false;
+                settings.Report.IncludePeakRssi = true;
+                settings.Report.IncludeSeenCount = false;
+                settings.Report.IncludeFastId = false;
+                settings.Report.IncludePhaseAngle = false;
+                settings.Report.IncludeDopplerFrequency = false;
+                settings.Report.IncludeGpsCoordinates = false;
+                settings.Report.IncludePcBits = false;
+                settings.Report.IncludeCrc = false;
+                settings.Report.Mode = ReportMode.Individual;
+
+                for (ushort i = 1; i <= 32; i++)
                 {
-                    Settings settings = reader.QueryDefaultSettings();
-
-
-                    settings.AutoStart.Mode = AutoStartMode.Immediate;
-                    settings.AutoStop.Mode = AutoStopMode.None;
-
-
-                    settings.Report.IncludeFirstSeenTime = true;
-                    settings.Report.IncludeLastSeenTime = true;
-                    settings.Report.IncludeSeenCount = true;
-
-
-                    settings.HoldReportsOnDisconnect = true;
-
-
-                    settings.Keepalives.Enabled = true;
-                    settings.Keepalives.PeriodInMs = 5000;
-
-                    settings.Keepalives.EnableLinkMonitorMode = true;
-                    settings.Keepalives.LinkDownThreshold = 5;
-
-
-                    reader.KeepaliveReceived += OnKeepaliveReceived;
-
-                    reader.ConnectionLost += OnConnectionLost;
-
-                    settings.ReaderMode = ReaderMode.DenseReaderM4;
-
-                    settings.SearchMode = SearchMode.DualTarget;
-
-                    settings.Session = 3;
-
-                    settings.TagPopulationEstimate = 32;
-
-                    settings.Report.IncludeFastId = false;
-
-                    settings.Antennas.DisableAll();
-
-                    settings.Antennas.GetAntenna(1).IsEnabled = true;
-                    settings.Antennas.GetAntenna(1).MaxTxPower = true;
-                    settings.Antennas.GetAntenna(1).TxPowerInDbm = 31.5;
-                    settings.Antennas.GetAntenna(1).MaxRxSensitivity = true;
-                    settings.Antennas.GetAntenna(1).RxSensitivityInDbm = -80;
-
-                    settings.Antennas.GetAntenna(9).IsEnabled = true;
-                    settings.Antennas.GetAntenna(9).MaxTxPower = true;
-                    settings.Antennas.GetAntenna(9).TxPowerInDbm = 31.5;
-                    settings.Antennas.GetAntenna(9).MaxRxSensitivity = true;
-                    settings.Antennas.GetAntenna(9).RxSensitivityInDbm = -80;
-
-                    settings.Antennas.GetAntenna(17).IsEnabled = true;
-                    settings.Antennas.GetAntenna(17).MaxTxPower = true;
-                    settings.Antennas.GetAntenna(17).TxPowerInDbm = 31.5;
-                    settings.Antennas.GetAntenna(17).MaxRxSensitivity = true;
-                    settings.Antennas.GetAntenna(17).RxSensitivityInDbm = -80;
-
-                    settings.Antennas.GetAntenna(25).IsEnabled = true;
-                    settings.Antennas.GetAntenna(25).MaxTxPower = true;
-                    settings.Antennas.GetAntenna(25).TxPowerInDbm = 31.5;
-                    settings.Antennas.GetAntenna(25).MaxRxSensitivity = true;
-                    settings.Antennas.GetAntenna(25).RxSensitivityInDbm = -80;
-
-                    settings.Report.Mode = ReportMode.Individual;
-
-                    settings.LowDutyCycle.IsEnabled = true;
-                    settings.LowDutyCycle.EmptyFieldTimeoutInMs = 500;
-                    settings.LowDutyCycle.FieldPingIntervalInMs = 200;
-                    
-                    settings.Filters.Mode = TagFilterMode.None;
-                                        
-                    //settings.ReducedPowerFrequenciesInMhz.Add(865.70);
-                   
-                   //settings.ReducedPowerFrequenciesInMhz.Add(866.30);
-                  
-                   //settings.ReducedPowerFrequenciesInMhz.Add(866.90);
-                   
-                   //settings.ReducedPowerFrequenciesInMhz.Add(867.50);
-
-                    //switch ( dicProfile["Reader_Mode"])
-                    //{
-                    //    case "0":
-                    //        settings.ReaderMode = ReaderMode.MaxThroughput;
-                    //        break;
-                    //    case "1":
-                    //        settings.ReaderMode = ReaderMode.Hybrid;
-                    //        break;
-                    //    case "2":
-                    //        settings.ReaderMode = ReaderMode.DenseReaderM4;
-                    //        break;
-                    //    case "3":
-                    //        settings.ReaderMode = ReaderMode.DenseReaderM8;
-                    //        break;
-                    //    case "5":
-                    //        settings.ReaderMode = ReaderMode.DenseReaderM4Two;
-                    //        break;
-                    //    case "1000":
-                    //        settings.ReaderMode = ReaderMode.AutoSetDenseReader;
-                    //        break;
-                    //    case "1002":
-                    //        settings.ReaderMode = ReaderMode.AutoSetDenseReaderDeepScan;
-                    //        break;
-                    //    case "1003":
-                    //        settings.ReaderMode = ReaderMode.AutoSetStaticFast;
-                    //        break;
-                    //    case "1004":
-                    //        settings.ReaderMode = ReaderMode.AutoSetStaticDRM;
-                    //        break;
-                    //    case "1005":
-                    //        settings.ReaderMode = ReaderMode.AutoSetCustom;
-                    //        break;
-
-                    //    default:
-                    //        break;
-                    //}
-
-                    //settings.Session = ushort.Parse( dicProfile["Session"]);
-                    //settings.TagPopulationEstimate = ushort.Parse( dicProfile["Population"]);
-
-                    //switch (int.Parse( dicProfile["Inventory_Mode"]))
-                    //{
-                    //    case 0:
-                    //        settings.SearchMode = SearchMode.SingleTarget;
-                    //        break;
-
-                    //    case 1:
-                    //        settings.SearchMode = SearchMode.DualTarget;
-                    //        break;
-
-                    //    case 2:
-                    //        settings.SearchMode = SearchMode.TagFocus;
-                    //        break;
-
-                    //    case 3:
-                    //        settings.SearchMode = SearchMode.SingleTargetReset;
-                    //        break;
-
-                    //    case 4:
-                    //        settings.SearchMode = SearchMode.DualTargetBtoASelect;
-                    //        break;
-
-                    //    default:
-                    //        break;
-                    //}
-
-                    //settings.Report.Mode = ReportMode.Individual;
-                    //settings.Report.IncludeFastId = bool.Parse( dicProfile["FastID"]);
-                    //switch ( dicProfile["MemoryBank"])
-                    //{
-                    //    case "EPC":
-                    //        settings.Filters.TagFilter1.MemoryBank = MemoryBank.Epc;
-                    //        settings.Filters.TagFilter1.BitPointer = BitPointers.Epc;
-                    //        settings.Filters.TagFilter1.BitPointer = ushort.Parse( dicProfile["BitPointer"]);
-                    //        settings.Filters.TagFilter1.BitCount = ushort.Parse( dicProfile["MaskLength"]);
-                    //        break;
-
-                    //    case "TID":
-                    //        settings.Filters.TagFilter1.MemoryBank = MemoryBank.Tid;
-                    //        settings.Filters.TagFilter1.BitPointer = ushort.Parse( dicProfile["BitPointer"]);
-                    //        settings.Filters.TagFilter1.BitCount = ushort.Parse( dicProfile["MaskLength"]);
-                    //        break;
-
-                    //    case "Reserved":
-                    //        settings.Filters.TagFilter1.MemoryBank = MemoryBank.Reserved;
-                    //        settings.Filters.TagFilter1.BitPointer = ushort.Parse( dicProfile["BitPointer"]);
-                    //        settings.Filters.TagFilter1.BitCount = ushort.Parse( dicProfile["MaskLength"]);
-
-                    //        break;
-
-                    //    case "User":
-                    //        settings.Filters.TagFilter1.MemoryBank = MemoryBank.User;
-                    //        settings.Filters.TagFilter1.BitPointer = ushort.Parse( dicProfile["BitPointer"]);
-                    //        settings.Filters.TagFilter1.BitCount = ushort.Parse( dicProfile["MaskLength"]);
-
-                    //        break;
-
-                    //    default:
-                    //        break;
-                    //}
-
-                    //if (bool.Parse( dicProfile["UseSpecifiedReq"]))
-                    //{
-                    //    if (bool.Parse( dicProfile["4"]))
-                    //        settings.ReducedPowerFrequenciesInMhz.Add(865.70);
-                    //    if (bool.Parse( dicProfile["7"]))
-                    //        settings.ReducedPowerFrequenciesInMhz.Add(866.30);
-                    //    if (bool.Parse( dicProfile["10"]))
-                    //        settings.ReducedPowerFrequenciesInMhz.Add(866.90);
-                    //    if (bool.Parse( dicProfile["13"]))
-                    //        settings.ReducedPowerFrequenciesInMhz.Add(867.50);
-                    //}
-
-                    //settings.LowDutyCycle.EmptyFieldTimeoutInMs = ushort.Parse( dicProfile["EmptyFieldTimeout"]);
-                    //settings.LowDutyCycle.FieldPingIntervalInMs = ushort.Parse( dicProfile["FieldPingInterval"]);
-                    //settings.LowDutyCycle.IsEnabled = bool.Parse( dicProfile["LowDutyCycle"]);
-
-                    //settings.Report.IncludeAntennaPortNumber = true;
-                    //settings.Report.IncludePeakRssi = true;
-                    //settings.Report.IncludePcBits = true;
-
-                    reader.ApplySettings(settings);
-
-                    //reader.SaveSettings();
-
-                    reader.TagsReported += OnTagsReported;
-
-                    Console.WriteLine("Press enter to exit.");
-                    Console.ReadLine();
-
-                    //reader.Stop();
-
-                    // Disconnect from the reader.
-                    //reader.Disconnect();
-
+                    settings.Antennas.GetAntenna(i).IsEnabled = true;
+                    settings.Antennas.GetAntenna(i).PortNumber = i;
+                    settings.Antennas.GetAntenna(i).PortName = "Antenna Port " + i;
+                    settings.Antennas.GetAntenna(i).TxPowerInDbm = 30;
+                    settings.Antennas.GetAntenna(i).RxSensitivityInDbm = -80;
+                    settings.Antennas.GetAntenna(i).MaxRxSensitivity = false;
+                    settings.Antennas.GetAntenna(i).MaxTxPower = false;
 
                 }
-                catch (Exception ex)
-                {
-                    ex.Message.ToString();
-                    this.Dispatcher.Invoke(new Action(() =>
-                    {
-                        lblScanLabel.Content = ex.Message.ToString();
-                        lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
-                    }));
-                    
-                }
-           
-            }
-            catch (OctaneSdkException e)
-            {
-                // Handle Octane SDK errors.
-                Console.WriteLine("Octane SDK exception: {0}", e.Message);
-                this.Dispatcher.Invoke(new Action(() =>
-                {
-                    lblScanLabel.Content = e.Message.ToString();
-                    lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
-                }));
+
+                settings.Keepalives.Enabled = false;
+                settings.Keepalives.PeriodInMs = 0;
+                settings.Keepalives.EnableLinkMonitorMode = false;
+                settings.Keepalives.LinkDownThreshold = 0;
+
+
+                settings.HoldReportsOnDisconnect = false;
+
+                settings.SpatialConfig.Mode = SpatialMode.Inventory;
+
+                settings.SpatialConfig.Placement.HeightCm = 400;
+                settings.SpatialConfig.Placement.FacilityXLocationCm = 0;
+                settings.SpatialConfig.Placement.FacilityYLocationCm = 0;
+                settings.SpatialConfig.Placement.OrientationDegrees = 0;
+
+                settings.SpatialConfig.Location.ComputeWindowSeconds = 10;
+                settings.SpatialConfig.Location.TagAgeIntervalSeconds = 20;
+                settings.SpatialConfig.Location.UpdateIntervalSeconds = 5;
+                settings.SpatialConfig.Location.UpdateReportEnabled = true;
+                settings.SpatialConfig.Location.EntryReportEnabled = true;
+                settings.SpatialConfig.Location.ExitReportEnabled = true;
+                settings.SpatialConfig.Location.DiagnosticReportEnabled = false;
+                settings.SpatialConfig.Location.MaxTxPower = false;
+                settings.SpatialConfig.Location.TxPowerInDbm = 30;
+
+                settings.SpatialConfig.Direction.TagAgeIntervalSeconds = 20;
+                settings.SpatialConfig.Direction.UpdateIntervalSeconds = 5;
+                settings.SpatialConfig.Direction.UpdateReportEnabled = true;
+                settings.SpatialConfig.Direction.EntryReportEnabled = true;
+                settings.SpatialConfig.Direction.ExitReportEnabled = true;
+                settings.SpatialConfig.Direction.FieldOfView = DirectionFieldOfView.Wide;
+                settings.SpatialConfig.Direction.Mode = DirectionMode.HighPerformance;
+                settings.SpatialConfig.Direction.TagPopulationLimit = 0;
+                settings.SpatialConfig.Direction.DiagnosticReportEnabled = false;
+                settings.SpatialConfig.Direction.MaxTxPower = false;
+                settings.SpatialConfig.Direction.TxPowerInDbm = 30;
+
+                reader.ApplySettings(settings);
+
+                reader.KeepaliveReceived += OnKeepaliveReceived;
+                reader.ConnectionLost += OnConnectionLost;
+                reader.TagsReported += OnTagsReported;
+
 
             }
-            catch (Exception e)
-            {
-                // Handle other .NET errors.
-                Console.WriteLine("Exception : {0}", e.Message);
-                this.Dispatcher.Invoke(new Action(() =>
-                {
-                    lblScanLabel.Content = e.Message.ToString();
-                    lblScanLabel.Foreground = new SolidColorBrush(Colors.Red);
-                }));
 
-            }
+
+
         }
 
-        private void readProfile()
+        
+
+        public void ConnectToReader()
         {
             try
             {
-                string filename = null;
-                string[] ProfileFiles = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory + @"ReaderSetting\");
-                foreach (string p in ProfileFiles)
-                {
-                    string name = Path.GetFileNameWithoutExtension(p);
-                    filename = p;
-                }
-
-                if (!File.Exists(filename))
-                {
-                    MessageBox.Show("Reader Profile Configuration File missing");
-                    return;
-                }
-
-                string[] file = File.ReadAllLines(filename);
-                dicProfile.Clear();
-                foreach (string i in file)
-                {
-                    dicProfile.Add(i.Split('=')[0], i.Split('=')[1]);
-                }
-            }
-            catch(Exception e)
-            {
-                e.Message.ToString();
-            }
-        }
-
-        public  void ConnectToReader()
-        {
-            try
-            {
-                Console.WriteLine("Attempting to connect to {0} ({1}).", reader.Name, READERIP);
+                System.Diagnostics.Debug.WriteLine("Attempting to connect to {0} ({1})." + reader.Name + READERIP);
                 reader.ConnectTimeout = 6000;
                 reader.Connect(READERIP);
-                Console.WriteLine("Successfully connected.");
+                System.Diagnostics.Debug.WriteLine("Successfully connected.");
             }
             catch (OctaneSdkException e)
             {
-                Console.WriteLine("Failed to connect.");
+                System.Diagnostics.Debug.WriteLine("Failed to connect.");
                 this.Dispatcher.Invoke(new Action(() =>
                 {
                     lblScanLabel.Content = e.Message.ToString();
@@ -488,59 +320,54 @@ namespace TunnelRedaerWpf
             }
         }
 
-        public  void OnConnectionLost(ImpinjReader reader)
+        public void OnConnectionLost(ImpinjReader reader)
         {
-            Console.WriteLine("Connection lost : {0} ({1})", reader.Name, reader.Address);
+            System.Diagnostics.Debug.WriteLine("Connection lost : {0} ({1})" + reader.Name + reader.Address);
             reader.Disconnect();
             ConnectToReader();
         }
 
         static void OnKeepaliveReceived(ImpinjReader reader)
         {
-            // This event handler is called when a keepalive 
-            // message is received from the reader.
-            Console.WriteLine("Keepalive received from {0} ({1})", reader.Name, reader.Address);
+            System.Diagnostics.Debug.WriteLine("Keepalive received from {0} ({1})" + reader.Name + reader.Address);
         }
 
         private void OnTagsReported(ImpinjReader sender, TagReport report)
         {
-            try
+            if (!action.Equals("stop"))
             {
-                if (!action.Equals("stop"))
+              
+                if (report.Tags.Count > 0)
                 {
-                    if(report.Tags.Count>0)
+                    System.Diagnostics.Debug.WriteLine("TAG COUNT" + report.Tags.Count());
+                    System.Diagnostics.Debug.WriteLine(toAscii(report.Tags[0].Epc.ToHexString()));
+                    string a = report.Tags[0].Epc.ToHexString();
+                    tagcount = tagcount + 1;
+                    if (!uniqueTags.Contains(a))
                     {
-                        Console.WriteLine(toAscii(report.Tags[0].Epc.ToHexString()));
-                        string a = toAscii(report.Tags[0].Epc.ToHexString());
-                        if(webSocketConnection!=null)
-                        {
-                            webSocketConnection.Send(report.Tags[0].Epc.ToHexString());
-                        }                       
-                        this.Dispatcher.Invoke(new Action(() =>
-                        {
-                            tagcount = tagcount + 1;
-                            lblCount.Content = tagcount.ToString();
-                            
-                            if(!uniqueTags.Contains(a))
-                            {
-                                uniqueTags.Add(a);
-                                lblTunnlCount.Content = uniqueTags.Count.ToString();
-                            }
+                        uniqueTags.Add(a);
 
-                            if (!lstTags.Items.Contains(a))
-                            {
-                                lstTags.Items.Add(a);
-                                lblTunnlCount.Content = lstTags.Items.Count.ToString();
-                            }
-                        }));
                     }
+                    this.Dispatcher.Invoke(new Action(() =>
+                    {
+                        TimeSpan timeSpan = watch.Elapsed;
+                        lblTunnlSeconds.Content = timeSpan.Seconds.ToString();
+                        lblCount.Content = tagcount.ToString();
+                        lblTunnlCount.Content = uniqueTags.Count.ToString();
+                        if (!lstTags.Items.Contains(a))
+                        {
+                            lstTags.Items.Add(a);
+
+                            if (webSocketConnection != null)
+                            {
+                                webSocketConnection.Send(a);
+                            }
+                        }
+                    }));
+                    
 
                 }
-                
-            }
-            catch (Exception e)
-            {
-                e.Message.ToString();
+
             }
 
         }
@@ -584,14 +411,14 @@ namespace TunnelRedaerWpf
         {
             try
             {
-                File.WriteAllLines(Environment.CurrentDirectory.ToString()+"/log.txt", lstTags.Items.OfType<string>().ToArray(), Encoding.UTF8);
+                File.WriteAllLines(Environment.CurrentDirectory.ToString() + "/log.txt", lstTags.Items.OfType<string>().ToArray(), Encoding.UTF8);
 
             }
             catch (Exception ex)
             {
                 ex.Message.ToString();
             }
-         }
+        }
 
         private void btnClear_Click(object sender, RoutedEventArgs e)
         {
@@ -604,17 +431,19 @@ namespace TunnelRedaerWpf
 
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
-            if(btnStart.Content.Equals("Start"))
+            if (btnStart.Content.Equals("Start"))
             {
                 initSetting();
+                watch.Start();
                 btnStart.Content = "Stop";
             }
             else
             {
+                watch.Stop();
                 btnStart.Content = "Start";
                 reader.Stop();
             }
-           
+
 
         }
     }

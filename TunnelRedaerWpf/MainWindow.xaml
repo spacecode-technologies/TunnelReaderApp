@@ -44,7 +44,12 @@
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
             </ListBox>
-            
+            <StackPanel Orientation="Horizontal">
+                <Label   Content="Seconds :"   FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"/>
+                <Label   Content=""   x:Name="lblTunnlSeconds" FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"/>
+
+            </StackPanel>
+
         </StackPanel>
     
         
