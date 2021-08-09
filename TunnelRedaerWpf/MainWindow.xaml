@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TunnelRedaerWpf"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="900">
     <Grid>
 
         <StackPanel Orientation="Vertical">
@@ -26,6 +26,9 @@
 
                 </StackPanel>
 
+                <Button Margin="20,0,0,0" x:Name="btnStart" Width="100" Height="30" Content="Start" Click="btnStart_Click"></Button>
+
+                
                 <Button Margin="20,0,0,0" x:Name="btnExport" Width="100" Height="30" Content="Export" Click="btnExport_Click"></Button>
                
                 <Button Margin="20,0,0,0" x:Name="btnClear" Width="100" Height="30" Content="Clear" Click="btnClear_Click"></Button>

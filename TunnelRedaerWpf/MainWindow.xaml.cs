@@ -512,7 +512,10 @@ namespace TunnelRedaerWpf
                     {
                         Console.WriteLine(toAscii(report.Tags[0].Epc.ToHexString()));
                         string a = toAscii(report.Tags[0].Epc.ToHexString());
-                        webSocketConnection.Send(report.Tags[0].Epc.ToHexString());
+                        if(webSocketConnection!=null)
+                        {
+                            webSocketConnection.Send(report.Tags[0].Epc.ToHexString());
+                        }                       
                         this.Dispatcher.Invoke(new Action(() =>
                         {
                             tagcount = tagcount + 1;
@@ -597,6 +600,22 @@ namespace TunnelRedaerWpf
             tagcount = 0;
             lstTags.Items.Clear();
             uniqueTags.Clear();
+        }
+
+        private void btnStart_Click(object sender, RoutedEventArgs e)
+        {
+            if(btnStart.Content.Equals("Start"))
+            {
+                initSetting();
+                btnStart.Content = "Stop";
+            }
+            else
+            {
+                btnStart.Content = "Start";
+                reader.Stop();
+            }
+           
+
         }
     }
 }
