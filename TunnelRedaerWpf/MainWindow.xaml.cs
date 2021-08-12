@@ -20,6 +20,7 @@ using System.Windows.Shapes;
 using Path = System.IO.Path;
 using System.Configuration;
 using System.Diagnostics;
+using System.Net;
 
 namespace TunnelRedaerWpf
 {
@@ -56,7 +57,8 @@ namespace TunnelRedaerWpf
                .AddJsonFile("appsetting.json", optional: false, reloadOnChange: true);
                 Configuration = builder.Build();
                 READERIP = Configuration.GetConnectionString("ReaderIp");
-                SYSTEMIP = Configuration.GetConnectionString("SystemIp");
+                SYSTEMIP = GetIPAddress();
+                lblIp.Content = SYSTEMIP;
                 PORT = Configuration.GetConnectionString("Port");
                 //readProfile();
                 startServer();
@@ -68,6 +70,24 @@ namespace TunnelRedaerWpf
             }
         }
 
+       
+
+        public string GetIPAddress()
+        {
+            string IPAddress="";
+            IPHostEntry Host = default(IPHostEntry);
+            string Hostname = null;
+            Hostname = System.Environment.MachineName;
+            Host = Dns.GetHostEntry(Hostname);
+            foreach (IPAddress IP in Host.AddressList)
+            {
+                if (IP.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    IPAddress = Convert.ToString(IP);
+                }
+            }
+            return IPAddress;
+        }
 
         private void startServer()
         {

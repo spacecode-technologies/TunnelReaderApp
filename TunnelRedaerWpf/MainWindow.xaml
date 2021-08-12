@@ -13,16 +13,29 @@
             <Label   Content="Waiting for Connection"   x:Name="lblScanLabel" FontSize="25" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
 
             <StackPanel Orientation="Horizontal">
+                <Label   Content="Ip:"   FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
+                <Label   Content=""   x:Name="lblIp"  FontSize="25" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
+
+                <StackPanel Orientation="Horizontal" >
+                    <Label   Content="Seconds :"   FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"/>
+                    <Label   Content=""   x:Name="lblTunnlSeconds" FontSize="25" VerticalAlignment="Center" Margin="20,10,20,20"/>
+
+                </StackPanel>
+                
+            </StackPanel>
+          
+
+            <StackPanel Orientation="Horizontal">
 
                 <StackPanel Orientation="Horizontal">
                     <Label   Content="Unique Tags :"   FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
-                    <Label   Content=""   x:Name="lblTunnlCount" FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
+                    <Label   Content=""   x:Name="lblTunnlCount" FontSize="25" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
 
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
                     <Label   Content="Scanned Tag Count :"   FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
-                    <Label   Content=""   x:Name="lblCount" FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
+                    <Label   Content=""   x:Name="lblCount" FontSize="25" VerticalAlignment="Center" Margin="20,10,20,20"></Label>
 
                 </StackPanel>
 
@@ -44,11 +57,7 @@
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
             </ListBox>
-            <StackPanel Orientation="Horizontal">
-                <Label   Content="Seconds :"   FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"/>
-                <Label   Content=""   x:Name="lblTunnlSeconds" FontSize="15" VerticalAlignment="Center" Margin="20,10,20,20"/>
-
-            </StackPanel>
+         
 
         </StackPanel>
     

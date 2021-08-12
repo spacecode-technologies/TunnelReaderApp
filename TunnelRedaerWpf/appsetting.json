@@ -1,7 +1,6 @@
 {
   "ConnectionStrings": {
-    "ReaderIp": "183.87.182.146",
-    "SystemIp": "192.168.1.6",
+    "ReaderIp": "183.87.182.146",    
     "Port": "4005"
   }
 }
